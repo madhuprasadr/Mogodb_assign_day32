@@ -1,0 +1,110 @@
+1. Users Collection
+{
+    "user_id": "001",
+    "name": "Madhuprasad",
+    "email": "r.madhuprasad@gmail.com",
+    "batch": "Zen-2020"
+}
+
+
+2. Codekata Collection
+{
+    "user_id": "001",
+    "problems_solved": 120
+}
+
+
+3. Attendance Collection
+{
+    "user_id": "001",
+    "date": "2020-10-16",
+    "status": "present" // or "absent"
+}
+
+4. Topics Collection
+{
+    "topic_id": "T1",
+    "name": "JavaScript Basics",
+    "date": "2020-10-20"
+}
+
+5. Tasks Collection
+{
+    "task_id": "TS1",
+    "name": "Build a calculator app",
+    "topic_id": "T1",
+    "submission_date": "2020-10-21",
+    "submitted_by": ["001","002"]
+}
+
+
+6. Company Drives Collection
+{
+    "drive_id": "D1",
+    "company_name": "Guvi",
+    "date": "2020-10-22",
+    "students_appeared": ["001", "003"]
+}
+
+
+7. Mentors Collection
+{
+    "mentor_id": "M1",
+    "name": "Vishnu",
+    "mentees": ["001", "002", "003", ..., "0016"] // List of user_ids
+}
+
+
+
+*****MongoDB Queries*****
+
+1. Find all the topics and tasks taught in October
+db.topics.find({ date: { $gte: "2020-10-01", $lte: "2020-10-31" } });
+db.tasks.find({ submission_date: { $gte: "2020-10-01", $lte: "2020-10-31" } });
+
+
+2.Find all the company drives that occurred between 15-Oct-2020 and 31-Oct-2020:
+db.company_drives.find({ date: { $gte: "2020-10-15", $lte: "2020-10-31" } });
+
+3.Find all the company drives and students who appeared for placements:
+db.company_drives.aggregate([
+    {
+        $project: {
+            company_name: 1,
+            students_appeared: 1
+        }
+    }
+]);
+
+
+4.Find the number of problems solved by a user in Codekata:
+db.codekata.find({}, { user_id: 1, problems_solved: 1 });
+
+
+5.Find all mentors who have more than 15 mentees:
+db.mentors.find({ "mentees.15": { $exists: true } });
+
+
+6.Find the number of users who were absent and did not submit tasks between 15-Oct-2020 and 31-Oct-2020:
+db.attendance.aggregate([
+    {
+        $match: {
+            status: "absent",
+            date: { $gte: "2020-10-15", $lte: "2020-10-31" }
+        }
+    },
+    {
+        $lookup: {
+            from: "tasks",
+            localField: "user_id",
+            foreignField: "submitted_by",
+            as: "task_submission"
+        }
+    },
+    {
+        $match: { task_submission: { $size: 0 } }
+    },
+    {
+        $count: "absent_and_no_task"
+    }
+]);
